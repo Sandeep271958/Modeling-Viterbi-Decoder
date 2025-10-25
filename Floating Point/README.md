@@ -35,6 +35,8 @@ It performs accurate addition of two floating-point numbers while handling expon
 (F_1 \times 2^{E_1}) + (F_2 \times 2^{E_2}) = F \times 2^{E}
 \]
 
+`(F₁ × 2ᴱ¹) + (F₂ × 2ᴱ²) = F × 2ᴱ`
+
 ---
 
 ## Key Features
@@ -70,5 +72,6 @@ It performs accurate addition of two floating-point numbers while handling expon
 
 ## Simulation
 You can simulate the design using tools like **ModelSim**, **Vivado**, or **Icarus Verilog**.
+
 
 
