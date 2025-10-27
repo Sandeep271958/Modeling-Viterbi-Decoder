@@ -388,3 +388,50 @@ module FPtAdder_IEEE754(
     end
 
 endmodule
+
+
+
+/*
+ * Module: LeadingZeroCounter
+ * Description: A 27-bit combinatorial leading zero counter.
+ *              Returns the number of leading zeros (0 to 27).
+ *              This is a standard priority-if structure, which synthesizes
+ *              to a fast priority encoder.
+ */
+module LeadingZeroCounter (
+    input [26:0] in,
+    output reg [4:0] out // 5 bits can represent 0-31
+);
+
+    always @(*) begin
+        if      (in) out = 5'd0;
+        else if (in) out = 5'd1;
+        else if (in) out = 5'd2;
+        else if (in) out = 5'd3;
+        else if (in) out = 5'd4;
+        else if (in) out = 5'd5;
+        else if (in) out = 5'd6;
+        else if (in) out = 5'd7;
+        else if (in) out = 5'd8;
+        else if (in) out = 5'd9;
+        else if (in) out = 5'd10;
+        else if (in) out = 5'd11;
+        else if (in) out = 5'd12;
+        else if (in) out = 5'd13;
+        else if (in) out = 5'd14;
+        else if (in) out = 5'd15;
+        else if (in) out = 5'd16;
+        else if (in)  out = 5'd17;
+        else if (in)  out = 5'd18;
+        else if (in)  out = 5'd19;
+        else if (in)  out = 5'd20;
+        else if (in)  out = 5'd21;
+        else if (in)  out = 5'd22;
+        else if (in)  out = 5'd23;
+        else if (in)  out = 5'd24;
+        else if (in)  out = 5'd25;
+        else if (in)  out = 5'd26;
+        else             out = 5'd27; // All zeros
+    end
+
+endmodule
