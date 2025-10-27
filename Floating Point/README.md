@@ -37,7 +37,7 @@ All datapath stages are implemented within a **single-cycle combinational block*
 `(F₁ × 2ᴱ¹) + (F₂ × 2ᴱ²) = F × 2ᴱ`
 
 ---
-## 🧩 Datapath Stages
+##  Datapath Stages
 The full single-cycle datapath includes **six distinct stages**, described below.
 
 ### **Stage 1: Special Case & Unpack**
@@ -68,7 +68,64 @@ The full single-cycle datapath includes **six distinct stages**, described below
   round_up = G & (R | S | L);
 '''
 
+### **Stage 6: Finalization & Pack**
+- Handles post-rounding overflow, underflow (subnormal conversion), and final packing into IEEE-754 32-bit format.
 
+---
+## Special Case Handling
+
+IEEE-754 defines explicit behavior for exceptional operands:
+
+| Case |	Condition |	Result |
+|------|-----------|--------|
+| NaN |	Exponent = 8'hFF, Mantissa ≠ 0 |	Any operation involving NaN → NaN |
+| Infinity |	Exponent = 8'hFF, Mantissa = 0 |	A + Inf = Inf, A - Inf = -Inf, Inf - Inf = NaN |
+| Zero |	Exponent = 8'h00, Mantissa = 0 |	A + 0 = A, A - 0 = A |
+
+To minimize power, the fast bypass path directly outputs pre-determined special-case results without activating the full datapath.
+
+### Guard, Round, and Sticky Bits
+
+The G, R, and S bits preserve information lost during mantissa alignment.
+They are essential for correct IEEE-754 rounding.
+
+| exp_diff (Shift Amount) |	Bits Shifted Out |	Guard (G) |	Round (R) |	Sticky (S) |
+|-------------------------|--------------------|-------------|-----------|------------|
+| 0 |	None |	0 |	0 | 	0 |
+| 1 |	mant[0] |	Bit 0 |	0 |	0 |
+| 2 |	mant[1:0] |	Bit 1 |	Bit 0 |	0 |
+| 3 |	mant[2:0] |	Bit 2	| Bit 1 |	OR of Bit[0] |
+| ≥4 |	mant[exp_diff-1:0] |	mant[exp_diff-1] |	mant[exp_diff-2] |	OR of remaining bits
+
+ - The Sticky bit = OR of all bits shifted out after the R bit.
+This prevents bias during tie-breaking.
+
+### Rounding Decision Table (Round to Nearest, Ties to Even)
+| LSB (L) |	G |	R |	S |	Description	Decision |
+|---------|---|-----|-----|------------------------|
+|X | 0 |	X |	X |	< 0.5 from LSB	Round Down |
+|X	| 1 |	0 |	1 |	> 0.5 from LSB	Round Up |
+|X	| 1 |	1 |	X |	> 0.5 from LSB	Round Up |
+|0	| 1 |	0 |	0 |	Exact 0.5 tie, even LSB	Round Down |
+|1	| 1 |	0 |	0 |	Exact 0.5 tie, odd LSB	Round Up |
+
+### Exception Handling (Overflow / Underflow)
+| Condition |	Description	| Action |
+|-----------|--------------|--------|
+| Overflow |	Exponent ≥ 255 (8'hFF) |	Result → Infinity ({sign, 8'hFF, 23'h000000}) |
+| Post-Rounding Overflow |	Mantissa overflows to 10.000...000 |	Right shift by 1 and increment exponent |
+| Underflow	Exponent < 1 | (unbiased E < -126)	Convert to Subnormal number | (exp=0, mantissa right-shifted) |
+| Re-Rounding (Subnormal) |	Generated G, R, S bits from shift |	Perform re-rounding before packing |
+
+## Core Hardware Blocks
+
+- Leading Zero Counter (LZC) — Determines number of leading zeros for normalization.
+
+- Variable Barrel Shifter — Performs left/right shifts for mantissa normalization.
+
+- Rounding Logic — Implements IEEE-754 “Round to Nearest, Ties to Even.”
+
+- Fast Bypass Path — Handles NaN, Inf, and Zero without full datapath activation.
 ---
 
 ## Key Features
@@ -104,6 +161,7 @@ The full single-cycle datapath includes **six distinct stages**, described below
 
 ## Simulation
 You can simulate the design using tools like **ModelSim**, **Vivado**, or **Icarus Verilog**.
+
 
 
 
